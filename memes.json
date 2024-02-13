@@ -1,0 +1,27 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "username": "admin",
+      "password": "12345678_"
+    }
+  ],
+  "memes": [
+    {
+      "id": 1,
+      "name": "Meme 1",
+      "description": "Description of meme 1",
+      "image": "url_of_meme_1.jpg",
+      "likes": 10,
+      "comments": 5
+    },
+    {
+      "id": 2,
+      "name": "Meme 2",
+      "description": "Description of meme 2",
+      "image": "url_of_meme_2.jpg",
+      "likes": 15,
+      "comments": 3
+    }
+  ]
+}
