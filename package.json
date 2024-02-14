@@ -1,7 +1,7 @@
 {
-  "name": "backend",
+  "name": "meme-backend",
   "version": "1.0.0",
-  "description": "Este proyecto es la parte del backend de una aplicación de memes desarrollada con JSON Server.",
+  "description": "memes backend",
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -9,7 +9,7 @@
   },
   "author": "",
   "license": "ISC",
-  "devDependencies": {
+  "dependencies": {
     "json-server": "^1.0.0-alpha.23"
   }
 }
