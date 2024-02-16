@@ -1,69 +1,103 @@
-const jsonServer = require('json-server');
-const server = jsonServer.create();
-const router = jsonServer.router('memes.json'); // Cambia el nombre del archivo según corresponda
-const middlewares = jsonServer.defaults();
-const PORT = 3001;
+const express = require('express');
+const cors = require('cors');
+const bodyParser = require('body-parser');
+const fs = require('fs');
+const jwt = require('jsonwebtoken');
 
-server.use(middlewares);
-server.use(jsonServer.bodyParser);
+const app = express();
+const PORT = process.env.PORT || 3000;
+const SECRET_KEY = 'AAS32SDFN283NNasd3basd';
 
-// Endpoint para consultar memes
-server.get('/memes', (req, res) => {
-    const memes = router.db.get('memes').value();
-    res.status(200).json(memes);
+app.use(cors());
+
+app.use(bodyParser.json());
+
+let data;
+
+fs.readFile('memes.json', 'utf8', (err, jsonData) => {
+  if (err) {
+    console.error('Error al leer el archivo memes.json:', err);
+    return;
+  }
+  try {
+    data = JSON.parse(jsonData);
+    console.log('Datos cargados correctamente desde memes.json');
+  } catch (parseError) {
+    console.error('Error al parsear el contenido de memes.json:', parseError);
+  }
 });
 
-// Endpoint para obtener un meme específico por su ID
-server.get('/memes/:id', (req, res) => {
-    const memeId = parseInt(req.params.id);
-    const meme = router.db.get('memes').find({ id: memeId }).value();
-
-    if (meme) {
-        res.status(200).json(meme);
-    } else {
-        res.status(404).json({ message: 'Meme no encontrado' });
-    }
+// GET /memes: Obtiene la lista de memes.
+app.get('/memes', (req, res) => {
+  if (!data || !data.memes) {
+    return res.status(500).json({ error: 'No se han cargado los datos correctamente' });
+  }
+  res.json(data.memes);
 });
 
-// Endpoint para crear un nuevo meme
-server.post('/memes', (req, res) => {
-    const newMeme = req.body;
-    router.db.get('memes').push(newMeme).write();
-    res.status(201).json(newMeme);
+// GET /memes/:id: Obtiene un meme específico por su ID.
+app.get('/memes/:id', (req, res) => {
+  if (!data || !data.memes) {
+    return res.status(500).json({ error: 'No se han cargado los datos correctamente' });
+  }
+  const memeId = parseInt(req.params.id);
+  const meme = data.memes.find(m => m.id === memeId);
+  if (!meme) {
+    return res.status(404).json({ error: 'Meme not found' });
+  }
+  res.json(meme);
 });
 
-// Endpoint para consultar usuarios
-server.get('/users', (req, res) => {
-    const users = router.db.get('users').value();
-    res.status(200).json(users);
+// POST /memes: Crea un nuevo meme.
+app.post('/memes', (req, res) => {
+  if (!data || !data.memes) {
+    return res.status(500).json({ error: 'No se han cargado los datos correctamente' });
+  }
+
+  const newMeme = req.body;
+  
+  const newId = data.memes.length > 0 ? Math.max(...data.memes.map(m => m.id)) + 1 : 1;
+  newMeme.id = newId;
+
+  data.memes.push(newMeme);
+  res.status(201).json(newMeme);
 });
 
-// Endpoint para obtener un usuario específico por su ID
-server.get('/users/:id', (req, res) => {
-    const userId = parseInt(req.params.id);
-    const user = router.db.get('users').find({ id: userId }).value();
-
-    if (user) {
-        res.status(200).json(user);
-    } else {
-        res.status(404).json({ message: 'Usuario no encontrado' });
-    }
+// GET /users: Obtiene la lista de usuarios.
+app.get('/users', (req, res) => {
+  if (!data || !data.users) {
+    return res.status(500).json({ error: 'No se han cargado los datos correctamente' });
+  }
+  res.json(data.users);
 });
 
-// Endpoint para el login
-server.post('/login', (req, res) => {
-    const { username, password } = req.body;
-    const user = router.db.get('users').find({ username, password }).value();
-
-    if (user) {
-        res.status(200).json({ message: 'Inicio de sesión exitoso' });
-    } else {
-        res.status(401).json({ message: 'Credenciales incorrectas' });
-    }
+// GET /users/:id: Obtiene un usuario específico por su ID.
+app.get('/users/:id', (req, res) => {
+  if (!data || !data.users) {
+    return res.status(500).json({ error: 'No se han cargado los datos correctamente' });
+  }
+  const userId = parseInt(req.params.id);
+  const user = data.users.find(u => u.id === userId);
+  if (!user) {
+    return res.status(404).json({ error: 'User not found' });
+  }
+  res.json(user);
 });
 
-server.use(router);
+// POST /login: Inicia sesión con un usuario existente.
+app.post('/login', (req, res) => {
+  if (!data || !data.users) {
+    return res.status(500).json({ error: 'No se han cargado los datos correctamente' });
+  }
+  const { username, password } = req.body;
+  const user = data.users.find(u => u.username === username && u.password === password);
+  if (!user) {
+    return res.status(401).json({ error: 'Invalid username or password' });
+  }
+  const token = jwt.sign({ username: user.username }, SECRET_KEY);
+  res.json({ message: 'Login successful', user, token });
+});
 
-server.listen(PORT, () => {
-    console.log(`JSON Server is running on port ${PORT}`);
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
 });
